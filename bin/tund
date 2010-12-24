@@ -6,7 +6,7 @@ opts = {
     :port => 22               # Local port to forward to
   },
   :remote => {
-    :host => 'aphyr.com',     # Remote host to connect to
+    :host => 'remote.com',    # Remote host to connect to
     :user => 'tunnel',        # Remote user
     :ssh_port => 22,          # Remote port SSH runs on
     :fwd_port => 2222         # Remote port which will be forwarded
@@ -16,7 +16,7 @@ opts = {
     :identity => '/etc/tund/key',   # The SSH identity file
     :opts => '-gN'                  # Additional options
   },
-  :interval => 15            # How often to attempt reconnection, in seconds
+  :interval => 300            # How often to attempt reconnection, in seconds
 }
 
 class Tunneler
