@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+opts = {
+  :local => {
+    :host => 'localhost',     # Local host to forward to
+    :port => 22               # Local port to forward to
+  },
+  :remote => {
+    :host => 'aphyr.com',     # Remote host to connect to
+    :user => 'tunnel',        # Remote user
+    :ssh_port => 22,          # Remote port SSH runs on
+    :fwd_port => 2222         # Remote port which will be forwarded
+  },
+  :ssh => {
+    :bin => '/usr/bin/ssh',         # SSH executable
+    :identity => '/etc/tund/key',   # The SSH identity file
+    :opts => '-gN'                  # Additional options
+  },
+  :interval => 15            # How often to attempt reconnection, in seconds
+}
+
+class Tunneler
+  def initialize(opts)
+    @opts = opts
+  end
+
+  def run
+    begin
+      tunnel
+    rescue => e
+      puts e
+      puts e.backtrace.join("\n")
+    ensure
+      sleep @opts[:interval]
+    end
+  end
+
+  # Opens the SSH tunnel
+  def tunnel
+    system @opts[:ssh][:bin],
+      @opts[:ssh][:opts],
+      '-p', @opts[:remote][:ssh_port].to_s,
+      '-i', @opts[:ssh][:identity],
+      '-R', [
+        @opts[:remote][:fwd_port],
+        @opts[:local][:host],
+        @opts[:local][:port]
+      ].join(':'),
+      "#{@opts[:remote][:user]}@#{@opts[:remote][:host]}"
+  end
+end
+
+if $0 == __FILE__
+  Tunneler.new(opts).run
+end
