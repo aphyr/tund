@@ -1,15 +1,18 @@
 Tund (tunneling daemon) establishes a reverse SSH tunnel from some publically
-accessible computer to your own. In the event of theft, loss, or NAT, you can
-easily access your machine.
+accessible computer to your own. In the event of theft or loss, you can log in
+to your machine as soon as it connects to the internet.
+
+It's also useful for machines behind a NAT you'd like to have a tunnel to.
 
 You need two computers: the local host (say, your laptop), and the remote host,
-which is publically accessible. Tund will use SSH forwarding to connect a
-certain port on the remote host to a certain port on the local host. You can
-then ssh -p some-port remote.com to access your local host.
+which is on the internet. Tund will use SSH forwarding to connect a port on the
+remote host to a port on the local host. You can then ssh -p <some-port>
+remote.com to access your local host.
 
 First, edit the options in bin/tund.
 
-Install tund and generate a keypair. I've included an upstart setup script.
+Install tund and generate a passwordless SSH keypair. I've included an upstart
+setup script for you, which should work on Ubuntu.
 
   local$ sudo bin/setup
 
@@ -33,7 +36,8 @@ Confirm that you can establish a tunnel:
 
 You can re-run bin/setup any time to make changes.
 
-I encourage leaving a honeypot account available on your machine. It will
-encourage laptop thiefs to use the machine as-is, and connect it to a network,
-at which point recovery is possible. Any user technically capable of running a
-privilege escalation attack has already won, when physical access is available.
+I suggest leaving a honeypot account available on your local machine. It will
+encourage laptop thiefs to use the machine as-is. When they connect it to the
+network, you'll be able to recover it. Conversely, any user capable of running
+a privilege escalation attack has already won, when physical access is
+available.
