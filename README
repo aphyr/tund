@@ -4,7 +4,8 @@ easily access your machine.
 
 You need two computers: the local host (say, your laptop), and the remote host,
 which is publically accessible. Tund will use SSH forwarding to connect a
-certain port on the remote host to a certain port on the local host. You can then ssh -p some-port remote.com to access your local host.
+certain port on the remote host to a certain port on the local host. You can
+then ssh -p some-port remote.com to access your local host.
 
 First, edit the options in bin/tund.
 
