@@ -17,19 +17,20 @@ setup script for you, which should work on Ubuntu.
   local$ sudo bin/setup
 
 Create a user on the remote host
-  remote$ adduser --disabled-password --shell /bin/false tunnel
-  remote$ cd ~tunnel
-  remote$ rm -rf .bash* .profile
+  remote# adduser --disabled-password --shell /bin/false tunnel
+  remote# cd ~tunnel
+  remote# rm .bash* .profile
 
 On the tunneling host, create .ssh/authorized_keys
-  remote$ mkdir .ssh
-  remote$ $VISUAL .ssh/authorized_keys
+  remote# mkdir .ssh
+  remote# $VISUAL .ssh/authorized_keys
 
 and paste the public key into that file.
 
-Seal the user's homedir
-  remote$ chmod 400 .ssh/authorized_keys
-  remote$ chmod 500 . .ssh
+Lock down the user's homedir
+  remote# chown -R tunnel:tunnel ~tunnel
+  remote# chmod 400 .ssh/authorized_keys
+  remote# chmod 500 . .ssh
 
 Confirm that you can establish a tunnel:
   local$ ssh -vgN -i etc/key -R 2222:localhost:22 tunnel@remote.com
