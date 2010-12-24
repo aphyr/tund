@@ -6,25 +6,33 @@ You need two computers: the local host (say, your laptop), and the remote host,
 which is publically accessible. Tund will use SSH forwarding to connect a
 certain port on the remote host to a certain port on the local host. You can then ssh -p some-port remote.com to access your local host.
 
+First, edit the options in bin/tund.
+
 Install tund and generate a keypair. I've included an upstart setup script.
-local$ sudo bin/setup
+
+  local$ sudo bin/setup
 
 Create a user on the remote host
-remote$ adduser --disabled-password --shell /bin/false tunnel
-remote$ cd ~tunnel
-remote$ rm -rf .bash* .profile
+  remote$ adduser --disabled-password --shell /bin/false tunnel
+  remote$ cd ~tunnel
+  remote$ rm -rf .bash* .profile
 
 On the tunneling host, create .ssh/authorized_keys
-remote$ mkdir .ssh
-remote$ $VISUAL .ssh/authorized_keys
+  remote$ mkdir .ssh
+  remote$ $VISUAL .ssh/authorized_keys
 
 and paste the public key into that file.
 
 Seal the user's homedir
-remote$ chmod 400 .ssh/authorized_keys
-remote$ chmod 500 . .ssh
+  remote$ chmod 400 .ssh/authorized_keys
+  remote$ chmod 500 . .ssh
 
 Confirm that you can establish a tunnel:
-local$ ssh -vgN -i etc/key -R 2222:localhost:22 tunnel@remote.com
+  local$ ssh -vgN -i etc/key -R 2222:localhost:22 tunnel@remote.com
 
-And finally, configure the options in bin/tund. An upstart script is located in etc/tund.conf for your convenience; simply run bin/setup for automatic startup.
+You can re-run bin/setup any time to make changes.
+
+I encourage leaving a honeypot account available on your machine. It will
+encourage laptop thiefs to use the machine as-is, and connect it to a network,
+at which point recovery is possible. Any user technically capable of running a
+privilege escalation attack has already won, when physical access is available.
