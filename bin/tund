@@ -6,7 +6,7 @@ opts = {
     :port => 22               # Local port to forward to
   },
   :remote => {
-    :host => 'remote.com',    # Remote host to connect to
+    :host => 'remote.server',    # Remote host to connect to
     :user => 'tunnel',        # Remote user
     :ssh_port => 22,          # Remote port SSH runs on
     :fwd_port => 2222         # Remote port which will be forwarded
