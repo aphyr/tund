@@ -5,11 +5,18 @@ DIR=$(cd $(dirname $0)/..; pwd -P)
 ETC_DIR=/etc/tund
 BIN_DIR=/usr/local/bin
 
-# Install tund binary 
+# Install tund binary
 install -m 700 -o root -g root -D "${DIR}/bin/tund" "${BIN_DIR}/tund"
 
 # Install upstart script
-install -m 644 -o root -g root "${DIR}/etc/init/tund.conf" /etc/init/tund.conf
+if [ -d "/etc/init" ]
+then
+  install -m 644 -o root -g root "${DIR}/etc/init/tund.conf" /etc/init/tund.conf
+else
+  install -m 755 -o root -g root "${DIR}/etc/init.d/tund" /etc/init.d/tund
+  update-rc.d tund defaults
+fi
+
 
 if [ ! -e "${ETC_DIR}/key" ]
 then
