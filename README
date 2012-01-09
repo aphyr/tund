@@ -33,7 +33,7 @@ Lock down the user's homedir
   remote# chmod 500 . .ssh
 
 Confirm that you can establish a tunnel:
-  local$ ssh -vgN -i etc/key -R 2222:localhost:22 tunnel@remote.com
+  local$ ssh -vgN -i etc/tund/key -R 2222:localhost:22 tunnel@remote.com
 
 You can re-run bin/setup any time to make changes.
 
