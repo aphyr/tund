@@ -9,7 +9,8 @@ BIN_DIR=/usr/local/bin
 install -m 700 -o root -g root -D "${DIR}/bin/tund" "${BIN_DIR}/tund"
 
 # Install upstart script
-if [ -d "/etc/init" ]
+grep -i ubuntu /etc/issue
+if [ $? -eq 0 ]
 then
   install -m 644 -o root -g root "${DIR}/etc/init/tund.conf" /etc/init/tund.conf
 else
@@ -35,4 +36,5 @@ fi
 # Configuration file
 install -m 600 -o root -g root -D "${DIR}/etc/tund.conf" "/etc/tund/tund.conf"
 
-service tund start
+service tund restart
+service tund status
