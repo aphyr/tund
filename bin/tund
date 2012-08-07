@@ -51,13 +51,15 @@ class Tunneler
   end
 
   def run
-    begin
-      tunnel
-    rescue Exception => e
-      puts e
-      puts e.backtrace.join("\n")
-    ensure
-      sleep @opts[:interval]
+    loop do
+      begin
+        tunnel
+      rescue Exception => e
+        puts e
+        puts e.backtrace.join("\n")
+      ensure
+        sleep @opts[:interval]
+      end
     end
   end
 
