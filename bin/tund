@@ -1,33 +1,59 @@
 #!/usr/bin/env ruby
 
-opts = {
-  :local => {
-    :host => 'localhost',     # Local host to forward to
-    :port => 22               # Local port to forward to
+require 'yaml'
+
+class Tunneler
+  DEFAULT_OPTS = {
+    :local => {
+    :host => 'localhost',        # Local host to forward to
+    :port => 22                  # Local port to forward to
   },
-  :remote => {
+    :remote => {
     :host => 'remote.server',    # Remote host to connect to
-    :user => 'tunnel',        # Remote user
-    :ssh_port => 22,          # Remote port SSH runs on
-    :fwd_port => 2222         # Remote port which will be forwarded
+    :user => 'tunnel',           # Remote user
+    :ssh_port => 22,             # Remote port SSH runs on
+    :fwd_port => 2222            # Remote port which will be forwarded
   },
-  :ssh => {
+    :ssh => {
     :bin => '/usr/bin/ssh',         # SSH executable
     :identity => '/etc/tund/key',   # The SSH identity file
     :opts => '-gN'                  # Additional options
   },
-  :interval => 300            # How often to attempt reconnection, in seconds
-}
+    :interval => 300            # How often to attempt reconnection, in seconds
+  }
 
-class Tunneler
-  def initialize(opts)
-    @opts = opts
+  attr_accessor :opts
+
+  def initialize()
+  end
+  
+  def merge_opts(a, b)
+    b.inject(a.dup) do |h, pair|
+      key, value = pair
+      h[key.to_sym] = case value
+                      when Hash
+                        merge_opts(a[key.to_sym], b[key])
+                      else
+                        value
+                      end
+
+      h
+    end 
+  end
+
+  def opts
+    return @opts if @opts
+
+    @opts = self.merge_opts(
+      DEFAULT_OPTS,
+      YAML.load(File.read('/etc/tund/tund.conf'))
+    )
   end
 
   def run
     begin
       tunnel
-    rescue => e
+    rescue Exception => e
       puts e
       puts e.backtrace.join("\n")
     ensure
@@ -37,19 +63,19 @@ class Tunneler
 
   # Opens the SSH tunnel
   def tunnel
-    system @opts[:ssh][:bin],
-      @opts[:ssh][:opts],
-      '-p', @opts[:remote][:ssh_port].to_s,
-      '-i', @opts[:ssh][:identity],
+    system opts[:ssh][:bin],
+      opts[:ssh][:opts],
+      '-p', opts[:remote][:ssh_port].to_s,
+      '-i', opts[:ssh][:identity],
       '-R', [
-        @opts[:remote][:fwd_port],
-        @opts[:local][:host],
-        @opts[:local][:port]
+        opts[:remote][:fwd_port],
+        opts[:local][:host],
+        opts[:local][:port]
       ].join(':'),
-      "#{@opts[:remote][:user]}@#{@opts[:remote][:host]}"
+      "#{opts[:remote][:user]}@#{opts[:remote][:host]}"
   end
 end
 
 if $0 == __FILE__
-  Tunneler.new(opts).run
+  Tunneler.new.run
 end

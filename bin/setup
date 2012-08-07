@@ -32,4 +32,7 @@ then
   install -m 600 -o root -g root -D "${DIR}/etc/key" "${ETC_DIR}/key"
 fi
 
+# Configuration file
+install -m 600 -o root -g root -D "${DIR}/etc/tund.conf" "/etc/tund/tund.conf"
+
 service tund start
