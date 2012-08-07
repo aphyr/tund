@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'yaml'
+require 'open3'
 
 class Tunneler
   DEFAULT_OPTS = {
@@ -57,15 +58,15 @@ class Tunneler
       rescue Exception => e
         puts e
         puts e.backtrace.join("\n")
-      ensure
-        sleep @opts[:interval]
       end
+      sleep @opts[:interval]
     end
   end
 
   # Opens the SSH tunnel
   def tunnel
-    system opts[:ssh][:bin],
+    stdin, stdout, waiter = Open3.popen2e(
+      opts[:ssh][:bin],
       opts[:ssh][:opts],
       '-p', opts[:remote][:ssh_port].to_s,
       '-i', opts[:ssh][:identity],
@@ -75,9 +76,19 @@ class Tunneler
         opts[:local][:port]
       ].join(':'),
       "#{opts[:remote][:user]}@#{opts[:remote][:host]}"
+    ) do |stdin, stdout, thread|
+      stdin.close
+      stdout.each do |line|
+        puts "SSH: #{line}"
+      end
+    end
   end
 end
 
 if $0 == __FILE__
+  trap 'INT' do
+    puts "SIGINT!"
+    exit!
+  end
   Tunneler.new.run
 end
