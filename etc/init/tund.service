@@ -1,0 +1,9 @@
+[Unit]
+Description=Tund tunnel
+Documentation=https://github.com/aphyr/tund
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/tund
+StandardOutput=null
+Restart=on-failure

@@ -9,14 +9,20 @@ BIN_DIR=/usr/local/bin
 install -m 700 -o root -g root -D "${DIR}/bin/tund" "${BIN_DIR}/tund"
 
 # Install upstart script
-if [ -d "/etc/init" ]
+if [[ $(sudo stat /proc/1/exe |grep systemd) ]]
 then
-  install -m 644 -o root -g root "${DIR}/etc/init/tund.conf" /etc/init/tund.conf
+  install -m 644 -o root -g root "${DIR}/etc/init/tund.service" }/etc/systemd/system/tund.service
 else
-  install -m 755 -o root -g root "${DIR}/etc/init.d/tund" /etc/init.d/tund
-  update-rc.d tund defaults
+  if [[ $(sudo stat /proc/1/exe |grep init) ]]
+    if [ -d "/etc/init" ]
+    then
+      install -m 644 -o root -g root "${DIR}/etc/init/tund.conf" /etc/init/tund.conf
+    else
+      install -m 755 -o root -g root "${DIR}/etc/init.d/tund" /etc/init.d/tund
+      update-rc.d tund defaults
+    fi
+  fi
 fi
-
 
 if [ ! -e "${ETC_DIR}/key" ]
 then
