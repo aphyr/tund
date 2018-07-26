@@ -2,6 +2,9 @@
 
 require 'yaml'
 require 'open3'
+require 'socket'
+require 'thread'
+require 'monitor'
 
 class Tunneler
   DEFAULT_OPTS = {
@@ -20,12 +23,15 @@ class Tunneler
     :identity => '/etc/tund/key',   # The SSH identity file
     :opts => '-gN'                  # Additional options
   },
+    :connect_timeout => 2,	    # How long to wait for connect
     :interval => 300            # How often to attempt reconnection, in seconds
   }
 
   attr_accessor :opts
 
   def initialize()
+    @ssh_lock = Monitor.new
+    @ssh_pid = nil
   end
   
   def merge_opts(a, b)
@@ -51,35 +57,119 @@ class Tunneler
     )
   end
 
-  def run
-    loop do
-      begin
-        tunnel
-      rescue Exception => e
-        puts e
-        puts e.backtrace.join("\n")
+  # Is the tunnel publically available?
+  def up?
+    # http://www.mikeperham.com/2009/03/15/socket-timeouts-in-ruby/
+    begin
+      timeout = opts[:connect_timeout]
+      host = opts[:remote][:host]
+      port = opts[:remote][:fwd_port]
+      addr = Socket.getaddrinfo host, nil
+      sock = Socket.new(
+               Socket.const_get(addr[0][0]),
+               Socket::SOCK_STREAM,
+               0)
+      if timeout
+        secs = Integer(timeout)
+        usecs = Integer((timeout - secs) * 1_000_000)
+        optval = [secs, usecs].pack("l_2") # lmaooo
+        sock.setsockopt Socket::SOL_SOCKET, Socket::SO_RCVTIMEO, optval
+        sock.setsockopt Socket::SOL_SOCKET, Socket::SO_SNDTIMEO, optval
       end
-      sleep @opts[:interval]
+      sock.connect(Socket.pack_sockaddr_in(port, addr[0][3]))
+      
+      # Close immediately.
+      sock.close
+      true
+    rescue Errno::EINVAL,
+					 Errno::ETIMEDOUT,
+					 Errno::ECONNRESET,
+           Errno::ECONNREFUSED,
+           SocketError
+      false
+    rescue Exception => e # fuck it
+      puts "up? error: #{e.inspect}"
+      puts e.backtrace.join("\n")
+      false
     end
   end
 
-  # Opens the SSH tunnel
+  # Kills the current SSH tunnel
+  def kill_tunnel
+    pid = @ssh_pid
+    if pid
+      puts "Killing tunnel process #{pid}"
+      Process.kill "KILL", pid
+    end
+  end
+
+  # Opens a new tunnel, blocking.
   def tunnel
-    stdin, stdout, waiter = Open3.popen2e(
-      opts[:ssh][:bin],
-      opts[:ssh][:opts],
-      '-p', opts[:remote][:ssh_port].to_s,
-      '-i', opts[:ssh][:identity],
-      '-R', [
-        opts[:remote][:fwd_port],
-        opts[:local][:host],
-        opts[:local][:port]
-      ].join(':'),
-      "#{opts[:remote][:user]}@#{opts[:remote][:host]}"
-    ) do |stdin, stdout, thread|
-      stdin.close
-      stdout.each do |line|
-        puts "SSH: #{line}"
+    @ssh_lock.synchronize do
+      if @ssh_pid
+        # ABORT
+        return nil
+      end
+
+      puts "Attempting connection to #{opts[:remote]}..."
+      begin
+        stdin, stdout, waiter = Open3.popen2e(
+          opts[:ssh][:bin],
+          '-o', 'ExitOnForwardFailure=yes',
+          opts[:ssh][:opts],
+          '-p', opts[:remote][:ssh_port].to_s,
+          '-i', opts[:ssh][:identity],
+          '-R', [
+            opts[:remote][:fwd_port],
+            opts[:local][:host],
+            opts[:local][:port]
+          ].join(':'),
+          "#{opts[:remote][:user]}@#{opts[:remote][:host]}"
+        ) do |stdin, stdout, thread|
+
+          # Squirrel away PID
+          @ssh_pid = thread[:pid]
+          puts "SSH PID is #{@ssh_pid}"
+
+          # Release lock; process is now stable.
+          @ssh_lock.mon_exit
+
+          # Print output
+          stdin.close
+          stdout.each do |line|
+            puts "SSH: #{line}"
+          end
+        end
+      ensure
+        @ssh_lock.synchronize do
+          @ssh_pid = nil
+          puts "Tunnel exited."
+        end
+      end
+    end
+  end
+
+  # Starts a tunnel in a new thread.
+  def spawn_tunnel
+    Thread.new { tunnel }
+  end
+
+  # Opens a new tunnel if the current one isn't up.
+  def watchdog
+    spawn_tunnel
+
+    loop do
+      begin
+        sleep opts[:interval]
+        unless up?
+          puts "Tunnel down."
+          kill_tunnel
+          sleep 1 # Give the tunnel a chance to notice it's dead
+          spawn_tunnel
+        end
+      rescue Exception => e
+        puts e
+        puts e.backtrace.join("\n")
       end
     end
   end
@@ -90,5 +180,5 @@ if $0 == __FILE__
     puts "SIGINT!"
     exit!
   end
-  Tunneler.new.run
+  Tunneler.new.watchdog
 end
