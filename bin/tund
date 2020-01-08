@@ -131,9 +131,6 @@ class Tunneler
           @ssh_pid = thread[:pid]
           puts "SSH PID is #{@ssh_pid}"
 
-          # Release lock; process is now stable.
-          @ssh_lock.mon_exit
-
           # Print output
           stdin.close
           stdout.each do |line|
