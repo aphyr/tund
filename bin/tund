@@ -21,7 +21,8 @@ class Tunneler
     :ssh => {
     :bin => '/usr/bin/ssh',         # SSH executable
     :identity => '/etc/tund/key',   # The SSH identity file
-    :opts => '-gN'                  # Additional options
+    # Additional options
+    :opts => '-gN -o ClientAliveInterval=10'
   },
     :connect_timeout => 2,	    # How long to wait for connect
     :interval => 300            # How often to attempt reconnection, in seconds
@@ -119,7 +120,7 @@ class Tunneler
           opts[:ssh][:opts],
           '-p', opts[:remote][:ssh_port].to_s,
           '-i', opts[:ssh][:identity],
-          '-R', [
+          '-R', ['*',
             opts[:remote][:fwd_port],
             opts[:local][:host],
             opts[:local][:port]
