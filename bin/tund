@@ -9,22 +9,22 @@ require 'monitor'
 class Tunneler
   DEFAULT_OPTS = {
     :local => {
-    :host => 'localhost',        # Local host to forward to
-    :port => 22                  # Local port to forward to
-  },
+      :host => 'localhost',        # Local host to forward to
+      :port => 22                  # Local port to forward to
+    },
     :remote => {
-    :host => 'remote.server',    # Remote host to connect to
-    :user => 'tunnel',           # Remote user
-    :ssh_port => 22,             # Remote port SSH runs on
-    :fwd_port => 2222            # Remote port which will be forwarded
-  },
+      :host => 'remote.server',    # Remote host to connect to
+      :user => 'tunnel',           # Remote user
+      :ssh_port => 22,             # Remote port SSH runs on
+      :fwd_port => 2222            # Remote port which will be forwarded
+    },
     :ssh => {
-    :bin => '/usr/bin/ssh',         # SSH executable
-    :identity => '/etc/tund/key',   # The SSH identity file
-    # Additional options
-    :opts => '-gN -o ServerAliveInterval=10'
-  },
-    :connect_timeout => 2,	    # How long to wait for connect
+      :bin => '/usr/bin/ssh',         # SSH executable
+      :identity => '/etc/tund/key',   # The SSH identity file
+      # Additional options
+      :opts => '-gN -o ServerAliveInterval=10'
+    },
+    :connect_timeout => 2,	# How long to wait for connect
     :interval => 300            # How often to attempt reconnection, in seconds
   }
 
@@ -117,7 +117,7 @@ class Tunneler
         stdin, stdout, waiter = Open3.popen2e(
           opts[:ssh][:bin],
           '-o', 'ExitOnForwardFailure=yes',
-          opts[:ssh][:opts],
+          *(opts[:ssh][:opts].split(/\s+/)),
           '-p', opts[:remote][:ssh_port].to_s,
           '-i', opts[:ssh][:identity],
           '-R', ['*',
