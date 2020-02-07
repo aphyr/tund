@@ -22,7 +22,7 @@ class Tunneler
     :bin => '/usr/bin/ssh',         # SSH executable
     :identity => '/etc/tund/key',   # The SSH identity file
     # Additional options
-    :opts => '-gN -o ClientAliveInterval=10'
+    :opts => '-gN -o ServerAliveInterval=10'
   },
     :connect_timeout => 2,	    # How long to wait for connect
     :interval => 300            # How often to attempt reconnection, in seconds
